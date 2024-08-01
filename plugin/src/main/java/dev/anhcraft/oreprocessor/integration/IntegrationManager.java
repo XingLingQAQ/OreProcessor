@@ -6,7 +6,9 @@ import dev.anhcraft.oreprocessor.api.integration.ShopProviderType;
 import dev.anhcraft.oreprocessor.api.util.MaterialClass;
 import dev.anhcraft.oreprocessor.api.util.UMaterial;
 import dev.anhcraft.oreprocessor.integration.adder.ItemCustomizer;
+import dev.anhcraft.oreprocessor.integration.adder.ItemsAdderBridge;
 import dev.anhcraft.oreprocessor.integration.adder.OraxenBridge;
+import dev.anhcraft.oreprocessor.integration.adder.VanillaBridge;
 import dev.anhcraft.oreprocessor.integration.shop.EconomyShopGUIBridge;
 import dev.anhcraft.oreprocessor.integration.shop.ShopGuiPlusBridge;
 import dev.anhcraft.oreprocessor.integration.shop.ShopProvider;
@@ -15,7 +17,6 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IntegrationManager {
@@ -26,6 +27,9 @@ public class IntegrationManager {
     public IntegrationManager(OreProcessor mainPlugin) {
         this.mainPlugin = mainPlugin;
 
+        itemCustomizers.put(MaterialClass.VANILLA, new VanillaBridge());
+
+        tryHook("AuraSkills", AuraSkillsBridge.class);
         tryHook("AureliumSkills", AureliumSkillsBridge.class);
         tryHook("ShopGUIPlus", ShopGuiPlusBridge.class);
         tryHook("EconomyShopGUI", EconomyShopGUIBridge.class);
@@ -34,6 +38,7 @@ public class IntegrationManager {
         tryHook("eco", EcoBridge.class);
         tryHook("AdvancedEnchantments", AdvancedEnchantmentBridge.class);
         tryHook("Oraxen", OraxenBridge.class);
+        tryHook("ItemsAdder", ItemsAdderBridge.class);
     }
 
     private void tryHook(String plugin, Class<? extends Integration> clazz) {
@@ -91,7 +96,7 @@ public class IntegrationManager {
     public Set<String> getAllMaterials() {
         Set<String> result = new HashSet<>();
         for (ItemCustomizer integration : itemCustomizers.values()) {
-            result.addAll(integration.getCustomMaterials().stream().map(UMaterial::toString).collect(Collectors.toList()));
+            result.addAll(integration.getCustomMaterials().stream().map(UMaterial::toString).toList());
         }
         return result;
     }

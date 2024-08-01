@@ -17,21 +17,23 @@ public class VanillaBridge implements ItemCustomizer {
 
     @Override
     public Set<UMaterial> getCustomMaterials() {
-        return null;
+        return Set.of();
     }
 
     @Override
     public @Nullable ItemStack buildItem(@NotNull UMaterial material) {
-        return null;
+        return new ItemStack(material.asBukkit());
     }
 
     @Override
     public @Nullable UItemStack identifyItem(@NotNull ItemStack item) {
-        return null;
+        // only raw item is vanilla, otherwise it might be custom item
+        return item.hasItemMeta() ? null : UItemStack.of(item);
     }
 
     @Override
     public @Nullable UMaterial identifyMaterial(@NotNull ItemStack item) {
-        return null;
+        // only raw item is vanilla, otherwise it might be custom item
+        return item.hasItemMeta() ? null : UMaterial.of(item.getType());
     }
 }

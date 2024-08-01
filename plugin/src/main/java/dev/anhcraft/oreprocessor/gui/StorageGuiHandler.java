@@ -77,14 +77,13 @@ public class StorageGuiHandler extends GuiHandler implements AutoRefresh {
         replaceItem("ore", new ItemReplacer() {
             @Override
             public @NotNull ItemBuilder apply(int slot, @NotNull ItemBuilder itemBuilder) {
-                MaterialUtil.apply(itemBuilder, ore.getIcon());
                 itemBuilder.replaceDisplay(s -> s.replace("{ore}", ore.getName())
                         .replace("{processing}", Integer.toString(processing))
                         .replace("{storage-current}", Integer.toString(stored))
                         .replace("{storage-capacity}", Integer.toString(cap))
                         .replace("{storage-ratio}", Integer.toString((int) (((double) stored) / cap * 100d)))
                         .replace("{throughput}", Integer.toString(throughputM)));
-                return itemBuilder;
+                return MaterialUtil.mergeToBuilder(itemBuilder, ore.getIcon());
             }
         });
 
@@ -119,10 +118,9 @@ public class StorageGuiHandler extends GuiHandler implements AutoRefresh {
 
             UMaterial product = products.get(i);
             ItemBuilder itemBuilder = GuiRegistry.STORAGE.getProductIcon();
-            MaterialUtil.apply(itemBuilder, product);
             itemBuilder.replaceDisplay(s -> s.replace("{current}", Integer.toString(oreData.countProduct(product))));
+            getInventory().setItem(slot, MaterialUtil.mergeToItem(itemBuilder, product));
 
-            getInventory().setItem(slot, itemBuilder.build());
             getSlot(slot).setEvents(new ClickEvent() {
                 @Override
                 public void onClick(@NotNull InventoryClickEvent clickEvent, @NotNull Player player, int i) {
@@ -181,7 +179,7 @@ public class StorageGuiHandler extends GuiHandler implements AutoRefresh {
                         @Override
                         public void onClick(@NotNull InventoryClickEvent clickEvent, @NotNull Player player, int slot) {
                             Optional<ShopProvider> shopProvider = plugin.integrationManager.getShopProvider(OreProcessor.getApi().getShopProvider());
-                            if (!shopProvider.isPresent()) return;
+                            if (shopProvider.isEmpty()) return;
 
                             Double proportion = plugin.mainConfig.accessibilitySettings.quickSellRatio.get(clickEvent.getClick());
                             if (proportion == null || proportion <= 0) return;
@@ -239,12 +237,12 @@ public class StorageGuiHandler extends GuiHandler implements AutoRefresh {
 
     private void handleAddProduct(Player player, ItemStack cursor, Set<UMaterial> products) {
         if (ItemUtil.isEmpty(cursor)) return;
-        UMaterial material = UMaterial.of(cursor.getType());
+        UMaterial material = OreProcessor.getApi().identifyMaterial(cursor);
 
         if (oreData.isFull()) {
             plugin.msg(player, plugin.messageConfig.storageFull);
             player.playSound(player.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1f, 1f);
-        } else if (!cursor.hasItemMeta() && products.contains(material)) {
+        } else if (material != null && products.contains(material)) {
             int oldTotalAmount = oreData.countProduct(material);
             int stored = oreData.addProduct(material, cursor.getAmount(), false);
             int remain = cursor.getAmount() - stored;

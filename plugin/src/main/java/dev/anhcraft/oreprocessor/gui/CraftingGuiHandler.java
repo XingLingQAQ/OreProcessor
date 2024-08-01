@@ -65,15 +65,14 @@ public class CraftingGuiHandler extends GuiHandler implements AutoRefresh {
 
         replaceItem("ore", new ItemReplacer() {
             @Override
-            public @NotNull ItemBuilder apply(int slot, @NotNull ItemBuilder itemBuilder) {
-                MaterialUtil.apply(itemBuilder, ore.getIcon());
+            public @NotNull ItemBuilder apply(int slot, @NotNull ItemBuilder itemBuilder) {;
                 itemBuilder.replaceDisplay(s -> s.replace("{ore}", ore.getName())
                         .replace("{processing}", Integer.toString(processing))
                         .replace("{storage-current}", Integer.toString(stored))
                         .replace("{storage-capacity}", Integer.toString(cap))
                         .replace("{storage-ratio}", Integer.toString((int) (((double) stored) / cap * 100d)))
                         .replace("{throughput}", Integer.toString(throughputM)));
-                return itemBuilder;
+                return MaterialUtil.mergeToBuilder(itemBuilder, ore.getIcon());
             }
         });
 
@@ -100,19 +99,17 @@ public class CraftingGuiHandler extends GuiHandler implements AutoRefresh {
             CraftingRecipe recipe = GuiRegistry.CRAFTING.getRecipeFor(product);
             int productCount = oreData.countProduct(product);
 
-            if (recipe == null || productCount < recipe.getInput().getAmount()) {
+            if (recipe == null || productCount < recipe.getInput().amount()) {
                 ItemBuilder itemBuilder = GuiRegistry.CRAFTING.getUncraftableProductIcon();
-                MaterialUtil.apply(itemBuilder, product);
                 itemBuilder.replaceDisplay(s -> s.replace("{current}", Integer.toString(productCount)));
-                getInventory().setItem(slot, itemBuilder.build());
+                getInventory().setItem(slot, MaterialUtil.mergeToItem(itemBuilder, product));
                 getSlot(slot).setEvents();
                 continue;
             }
 
             ItemBuilder itemBuilder = GuiRegistry.CRAFTING.getCraftableProductIcon();
-            MaterialUtil.apply(itemBuilder, product);
             itemBuilder.replaceDisplay(s -> s.replace("{current}", Integer.toString(productCount)));
-            getInventory().setItem(slot, itemBuilder.build());
+            getInventory().setItem(slot, MaterialUtil.mergeToItem(itemBuilder, product));
             getSlot(slot).setEvents(new ClickEvent() {
                 @Override
                 public void onClick(@NotNull InventoryClickEvent clickEvent, @NotNull Player player, int i) {
@@ -136,9 +133,9 @@ public class CraftingGuiHandler extends GuiHandler implements AutoRefresh {
                                         .flush();
                                 return -1;
                             }
-                            int expectedInput = recipe.getInput().getAmount() * many;
+                            int expectedInput = recipe.getInput().amount() * many;
                             int actualInput = Math.min(expectedInput, currentAmount);
-                            int craftTimes = (int) Math.floor((double) actualInput / recipe.getInput().getAmount());
+                            int craftTimes = (int) Math.floor((double) actualInput / recipe.getInput().amount());
                             if (craftTimes == 0) {
                                 player.playSound(player.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1f, 1f);
                                 scopedLog.add("input", actualInput)
@@ -149,10 +146,10 @@ public class CraftingGuiHandler extends GuiHandler implements AutoRefresh {
                                         .flush();
                                 return -1;
                             }
-                            int actualProduct = craftTimes * recipe.getOutput().getAmount();
-                            oreData.addProduct(recipe.getOutput().getMaterial(), actualProduct, true);
+                            int actualProduct = craftTimes * recipe.getOutput().amount();
+                            oreData.addProduct(recipe.getOutput().material(), actualProduct, true);
                             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
-                            int remainingInput = actualInput % recipe.getInput().getAmount();
+                            int remainingInput = actualInput % recipe.getInput().amount();
                             int newAmount = currentAmount - actualInput + remainingInput;
                             scopedLog.add("input", actualInput)
                                     .add("craftTimes", craftTimes)
