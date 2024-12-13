@@ -3,10 +3,13 @@ package dev.anhcraft.oreprocessor.integration.adder;
 import dev.anhcraft.oreprocessor.api.util.MaterialClass;
 import dev.anhcraft.oreprocessor.api.util.UItemStack;
 import dev.anhcraft.oreprocessor.api.util.UMaterial;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class VanillaBridge implements ItemCustomizer {
@@ -35,5 +38,15 @@ public class VanillaBridge implements ItemCustomizer {
     public @Nullable UMaterial identifyMaterial(@NotNull ItemStack item) {
         // only raw item is vanilla, otherwise it might be custom item
         return item.hasItemMeta() ? null : UMaterial.of(item.getType());
+    }
+
+    @Override
+    public @Nullable UMaterial identifyMaterial(@NotNull Block block) {
+        return UMaterial.of(block.getType());
+    }
+
+    @Override
+    public @Nullable List<ItemStack> getLoot(@NotNull Block block, @NotNull ItemStack tool) {
+        return new ArrayList<>(block.getDrops(tool));
     }
 }

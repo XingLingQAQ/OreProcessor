@@ -5,10 +5,14 @@ import dev.anhcraft.oreprocessor.api.util.MaterialClass;
 import dev.anhcraft.oreprocessor.api.util.UItemStack;
 import dev.anhcraft.oreprocessor.api.util.UMaterial;
 import dev.anhcraft.oreprocessor.integration.Integration;
+import dev.lone.itemsadder.api.CustomBlock;
 import dev.lone.itemsadder.api.CustomStack;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,5 +49,17 @@ public class ItemsAdderBridge implements Integration, ItemCustomizer {
     public UMaterial identifyMaterial(@NotNull ItemStack item) {
         CustomStack cs = CustomStack.byItemStack(item);
         return cs == null ? null : UMaterial.fromItemsAdder(cs.getNamespacedID());
+    }
+
+    @Override
+    public @Nullable UMaterial identifyMaterial(@NotNull Block block) {
+        CustomBlock cb = CustomBlock.byAlreadyPlaced(block);
+        return cb == null ? null : UMaterial.fromItemsAdder(cb.getNamespacedID());
+    }
+
+    @Override
+    public @Nullable List<ItemStack> getLoot(@NotNull Block block, @NotNull ItemStack tool) {
+        CustomBlock cb = CustomBlock.byAlreadyPlaced(block);
+        return cb == null ? null : cb.getLoot(tool, false);
     }
 }
