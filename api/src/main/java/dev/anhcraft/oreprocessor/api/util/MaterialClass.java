@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum MaterialClass {
+    // Note: do not change the order since it might break the code
     VANILLA(null),
     ORAXEN("ox"),
     ITEMSADDER("ia");
