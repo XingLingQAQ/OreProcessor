@@ -42,6 +42,9 @@ public class IntegrationManager {
         tryHook("Oraxen", OraxenBridge.class);
         tryHook("ItemsAdder", ItemsAdderBridge.class);
 
+        itemCustomizersListReversed.addAll(itemCustomizers.values());
+        Collections.reverse(itemCustomizersListReversed);
+
         Preconditions.checkArgument(getItemCustomizers().iterator().next().getClass() == VanillaBridge.class,
           "First item customizer in forward list is expected to be Vanilla");
 
