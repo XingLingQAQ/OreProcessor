@@ -6,6 +6,7 @@ import dev.anhcraft.oreprocessor.api.integration.ShopProviderType;
 import dev.anhcraft.oreprocessor.api.upgrade.UpgradeLevel;
 import dev.anhcraft.oreprocessor.api.util.UItemStack;
 import dev.anhcraft.oreprocessor.api.util.UMaterial;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -162,6 +163,14 @@ public interface OreProcessorApi {
     ShopProviderType getShopProvider();
 
     /**
+     * Gets the material of the given block.
+     * @param block The block
+     * @return The material
+     */
+    @Nullable
+    UMaterial identifyMaterial(@Nullable Block block);
+
+    /**
      * Gets the material of the given item stack.
      * @param itemStack The item stack
      * @return The material
@@ -212,4 +221,13 @@ public interface OreProcessorApi {
         if (itemStack == null) return null;
         return buildItem(itemStack.material(), itemStack.amount());
     }
+
+    /**
+     * Gets the loot of the given block.
+     * @param block The block
+     * @param tool The tool used to mine the block
+     * @return a list of items stack
+     */
+    @Nullable
+    List<ItemStack> getLoot(@NotNull Block block, @NotNull ItemStack tool);
 }

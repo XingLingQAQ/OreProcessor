@@ -1,5 +1,6 @@
 package dev.anhcraft.oreprocessor.integration;
 
+import com.google.common.base.Preconditions;
 import dev.anhcraft.config.utils.ObjectUtil;
 import dev.anhcraft.oreprocessor.OreProcessor;
 import dev.anhcraft.oreprocessor.api.integration.ShopProviderType;
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
 public class IntegrationManager {
     private final Map<String, Integration> integrationMap = new HashMap<>();
     private final Map<MaterialClass, ItemCustomizer> itemCustomizers = new EnumMap<>(MaterialClass.class);
+    private final List<ItemCustomizer> itemCustomizersListReversed = new ArrayList<>();
     private final OreProcessor mainPlugin;
 
     public IntegrationManager(OreProcessor mainPlugin) {
@@ -39,6 +41,12 @@ public class IntegrationManager {
         tryHook("AdvancedEnchantments", AdvancedEnchantmentBridge.class);
         tryHook("Oraxen", OraxenBridge.class);
         tryHook("ItemsAdder", ItemsAdderBridge.class);
+
+        Preconditions.checkArgument(getItemCustomizers().iterator().next().getClass() == VanillaBridge.class,
+          "First item customizer in forward list is expected to be Vanilla");
+
+        Preconditions.checkArgument(itemCustomizersListReversed.iterator().next().getClass() != VanillaBridge.class,
+          "First item customizer in reversed list is expected to be non-Vanilla");
     }
 
     private void tryHook(String plugin, Class<? extends Integration> clazz) {
@@ -82,6 +90,10 @@ public class IntegrationManager {
         return itemCustomizers.values();
     }
 
+    public Collection<ItemCustomizer> getItemCustomizerReversed() {
+        return itemCustomizersListReversed;
+    }
+
     public Optional<ShopProvider> getShopProvider(@Nullable ShopProviderType shopProviderType) {
         if (shopProviderType == null) return Optional.empty();
         return Optional.ofNullable(integrationMap.get(shopProviderType.getPlugin()))
@@ -94,7 +106,7 @@ public class IntegrationManager {
     }
 
     public Set<String> getAllMaterials() {
-        Set<String> result = new HashSet<>();
+        Set<String> result = new LinkedHashSet<>();
         for (ItemCustomizer integration : itemCustomizers.values()) {
             result.addAll(integration.getCustomMaterials().stream().map(UMaterial::toString).toList());
         }

@@ -16,6 +16,7 @@ import dev.anhcraft.oreprocessor.api.util.WheelSelection;
 import dev.anhcraft.oreprocessor.config.OreConfig;
 import dev.anhcraft.oreprocessor.config.UpgradeLevelConfig;
 import dev.anhcraft.oreprocessor.integration.adder.ItemCustomizer;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -245,6 +246,19 @@ public final class OreProcessorApiImpl implements OreProcessorApi {
     }
 
     @Override
+    public @Nullable UMaterial identifyMaterial(@Nullable Block block) {
+        if (block == null || block.isEmpty())
+            return null;
+        // we must check the vanilla last
+        for (ItemCustomizer itemCustomizer : plugin.integrationManager.getItemCustomizerReversed()) {
+            UMaterial uMaterial = itemCustomizer.identifyMaterial(block);
+            if (uMaterial != null)
+                return uMaterial;
+        }
+        return null;
+    }
+
+    @Override
     public @Nullable UMaterial identifyMaterial(@Nullable ItemStack itemStack) {
         if (itemStack == null || itemStack.getType().isAir())
             return null;
@@ -283,5 +297,18 @@ public final class OreProcessorApiImpl implements OreProcessorApi {
         if (itemStack == null)
             return null;
         return plugin.integrationManager.getItemCustomizer(itemStack.material().getClassifier()).buildItem(itemStack.material());
+    }
+
+    @Override
+    public @Nullable List<ItemStack> getLoot(@NotNull Block block, @NotNull ItemStack tool) {
+        if (block.isEmpty())
+            return List.of();
+        // we must check the vanilla last
+        for (ItemCustomizer itemCustomizer : plugin.integrationManager.getItemCustomizerReversed()) {
+            List<ItemStack> loot = itemCustomizer.getLoot(block, tool);
+            if (loot != null)
+                return loot;
+        }
+        return null;
     }
 }
