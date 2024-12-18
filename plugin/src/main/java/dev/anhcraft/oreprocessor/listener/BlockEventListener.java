@@ -48,6 +48,7 @@ public class BlockEventListener implements Listener {
     // If we rely on BlockDropItemEvent on that case, additional drops would be missed
     private boolean canVanillaBlocksContainExtraDrops() {
         return plugin.integrationManager.hasIntegration("ItemsAdder") ||
-          plugin.integrationManager.hasIntegration("Oraxen");
+          plugin.integrationManager.hasIntegration("Oraxen") ||
+          plugin.integrationManager.hasIntegration("AdvancedEnchantments");
     }
 }
