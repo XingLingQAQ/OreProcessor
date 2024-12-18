@@ -32,7 +32,7 @@ public class BlockEventListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     private void onDrop(BlockDropItemEvent event) {
         // If drop collector is already required, the following job would be delegated to the collector later on
         if (canVanillaBlocksContainExtraDrops())
