@@ -10,8 +10,10 @@ Ore Processor is a plugin to customize mining experience.
 - Offline-processing
 - Upgrades
 - Bulk operations
-- Integration: ShopGUI+, EconomyShopGUI, AureliumSkills, Eco plugins
-- Placeholders support
+- Shop integration: ShopGUI+, EconomyShopGUI
+- Support custom drops from AureliumSkills, AuraSkills, Eco plugins
+- Support custom items from ItemsAdder, Oraxen
+- PlaceholderAPI support
 - JSON logging
 
 ## Purchase
