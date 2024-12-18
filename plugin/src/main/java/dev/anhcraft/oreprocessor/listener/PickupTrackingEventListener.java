@@ -2,7 +2,7 @@ package dev.anhcraft.oreprocessor.listener;
 
 import dev.anhcraft.config.bukkit.utils.ColorUtil;
 import dev.anhcraft.oreprocessor.OreProcessor;
-import dev.anhcraft.oreprocessor.api.event.OrePickupEvent;
+import dev.anhcraft.oreprocessor.api.event.DropPickupEvent;
 import dev.anhcraft.oreprocessor.api.util.UMaterial;
 import dev.anhcraft.oreprocessor.util.LocaleUtils;
 import net.md_5.bungee.api.ChatMessageType;
@@ -42,9 +42,9 @@ public class PickupTrackingEventListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    private void pickup(OrePickupEvent event) {
+    private void pickup(DropPickupEvent event) {
         cache.computeIfAbsent(event.getPlayer().getUniqueId(), uuid -> new PlayerPickupQueue())
-                .increase(event.getFeedstock(), event.getAmount());
+                .increase(event.getItem().material(), event.getItem().amount());
     }
 
     @EventHandler
@@ -59,6 +59,7 @@ public class PickupTrackingEventListener implements Listener {
             return queue.poll();
         }
 
+        // TODO optimize this code
         public void increase(UMaterial material, int amount) {
             for (PickupAggregator m : queue) {
                 if (m.getMaterial().is(material)) {
