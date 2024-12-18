@@ -121,16 +121,19 @@ public class OreConfig {
         if (args.length == 1) {
             UMaterial material = UMaterial.parse(args[0].toUpperCase());
             return material == null ? null : new UItemStack(material, 1);
-        } else if (args.length == 2) {
+        } else if (args.length == 2 && args[1].matches("\\d+")) {
             UMaterial material = UMaterial.parse(args[0].toUpperCase());
-            String num = args[1];
-            if (!num.matches("\\d+")) {
-                OreProcessor.getInstance().getLogger().warning(String.format("Invalid number '%s' in phrase '%s'", num, str));
-                return null;
-            }
-            return material == null ? null : new UItemStack(material, Integer.parseInt(num));
+            return material == null ? null : new UItemStack(material, Integer.parseInt(args[1]));
         } else {
-            return null;
+            String num = args[args.length-1];
+            if (num.matches("\\d+")) {
+                String namespace = String.join(":", Arrays.copyOfRange(args, 0, args.length-1));
+                UMaterial material = UMaterial.parse(namespace);
+                return material == null ? null : new UItemStack(material, Integer.parseInt(num));
+            } else {
+                UMaterial material = UMaterial.parse(str);
+                return material == null ? null : new UItemStack(material, 1);
+            }
         }
     }
 }
