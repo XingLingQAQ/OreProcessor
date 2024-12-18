@@ -5,8 +5,10 @@ import dev.anhcraft.oreprocessor.OreProcessor;
 import dev.anhcraft.oreprocessor.api.Ore;
 import dev.anhcraft.oreprocessor.api.data.OreData;
 import dev.anhcraft.oreprocessor.api.data.PlayerData;
+import dev.anhcraft.oreprocessor.api.event.DropPickupEvent;
 import dev.anhcraft.oreprocessor.api.event.OreMineEvent;
 import dev.anhcraft.oreprocessor.api.event.OrePickupEvent;
+import dev.anhcraft.oreprocessor.api.util.UItemStack;
 import dev.anhcraft.oreprocessor.api.util.UMaterial;
 import dev.anhcraft.oreprocessor.storage.stats.StatisticHelper;
 import org.bukkit.Bukkit;
@@ -137,13 +139,17 @@ public final class ProcessingPlant {
         if (feedstock == null) continue;
         int amount = itemStack.getAmount();
 
-        // TODO there is currently no event fired for picking up (through the collector)
+        UItemStack uItemStack = new UItemStack(feedstock, amount);
+        DropPickupEvent pickupEvent = DropPickupEvent.fromCollectingDrops(player, ore, uItemStack);
+        pickupEvent.setCancelled(
+          (oreData.isFull() && plugin.mainConfig.behaviourSettings.dropOnFullStorage) ||
+          !ore.isAcceptableFeedstock(feedstock)
+        );
+        Bukkit.getPluginManager().callEvent(pickupEvent);
 
-        // re-check every time we add a feedstock
-        if (oreData.isFull() && plugin.mainConfig.behaviourSettings.dropOnFullStorage)
-          break; // for remaining, the item entities are not removed, so they would be dropped later
-
-        if (ore.isAcceptableFeedstock(feedstock)) {
+        if (!pickupEvent.isCancelled()) {
+          feedstock = pickupEvent.getItem().material();
+          amount = pickupEvent.getItem().amount();
           StatisticHelper.increaseFeedstockCount(ore.getId(), amount, playerData);
           StatisticHelper.increaseFeedstockCount(ore.getId(), amount, OreProcessor.getApi().getServerData());
           oreData.addFeedstock(feedstock, amount);
@@ -177,7 +183,7 @@ public final class ProcessingPlant {
    * @return result
    */
   public Result collectLoot(Player player, BlockState state, List<Item> loot) {
-    Preconditions.checkArgument(!isUnmodifiable(loot), "Given loot must be modifiable");
+    Preconditions.checkArgument(isModifiable(loot), "Given loot must be modifiable");
 
     if (!isEnabled(player))
       return Result.PASS;
@@ -199,7 +205,10 @@ public final class ProcessingPlant {
       int amount = eventItem.getAmount();
 
       OrePickupEvent pickupEvent = new OrePickupEvent(player, state.getBlock(), state, ore, feedstock, amount);
-      pickupEvent.setCancelled(!ore.isAcceptableFeedstock(feedstock));
+      pickupEvent.setCancelled(
+        (oreData.isFull() && plugin.mainConfig.behaviourSettings.dropOnFullStorage) ||
+          !ore.isAcceptableFeedstock(feedstock)
+      );
       Bukkit.getPluginManager().callEvent(pickupEvent);
 
       if (!pickupEvent.isCancelled()) {
@@ -235,7 +244,7 @@ public final class ProcessingPlant {
    * @return result
    */
   public Result collectLoot(Player player, Collection<? extends ItemStack> loot) {
-    Preconditions.checkArgument(!isUnmodifiable(loot), "Given loot must be modifiable");
+    Preconditions.checkArgument(isModifiable(loot), "Given loot must be modifiable");
 
     if (!isEnabled(player))
       return Result.PASS;
@@ -250,26 +259,29 @@ public final class ProcessingPlant {
       int amount = item.getAmount();
       Collection<Ore> ores = OreProcessor.getApi().getOresAllowFeedstock(feedstock);
       if (ores.isEmpty()) continue;
-
-      boolean added = false;
+      UItemStack uItemStack = new UItemStack(feedstock, amount);
 
       // TODO we should implement a dynamic storing similar to /ore store
       for (Ore ore : ores) {
         OreData oreData = playerData.requireOreData(ore.getId());
-        if (oreData.isFull() && plugin.mainConfig.behaviourSettings.dropOnFullStorage)
-          continue;
 
-        added = true;
-        StatisticHelper.increaseFeedstockCount(ore.getId(), amount, playerData);
-        StatisticHelper.increaseFeedstockCount(ore.getId(), amount, OreProcessor.getApi().getServerData());
-        oreData.addFeedstock(feedstock, amount);
-        it.remove();
-        break; // add once only
-      }
+        DropPickupEvent pickupEvent = DropPickupEvent.fromCollectingDrops(player, ore, uItemStack);
+        pickupEvent.setCancelled(
+            (oreData.isFull() && plugin.mainConfig.behaviourSettings.dropOnFullStorage) ||
+            !ore.isAcceptableFeedstock(feedstock)
+        );
+        Bukkit.getPluginManager().callEvent(pickupEvent);
 
-      if (added) {
-        it.remove();
-        has = true;
+        if (!pickupEvent.isCancelled()) {
+          feedstock = pickupEvent.getItem().material();
+          amount = pickupEvent.getItem().amount();
+          has = true;
+          StatisticHelper.increaseFeedstockCount(ore.getId(), amount, playerData);
+          StatisticHelper.increaseFeedstockCount(ore.getId(), amount, OreProcessor.getApi().getServerData());
+          oreData.addFeedstock(feedstock, amount);
+          it.remove();
+          break; // add once only
+        }
       }
     }
 
@@ -282,12 +294,12 @@ public final class ProcessingPlant {
     return Result.PASS_WITH_IN_PLACE_MODIFY;
   }
 
-  private static boolean isUnmodifiable(Collection<?> collection) {
+  private static boolean isModifiable(Collection<?> collection) {
     try {
       collection.addAll(Collections.emptyList());
-      return false;
-    } catch (UnsupportedOperationException UnsupportedOperationException) {
       return true;
+    } catch (UnsupportedOperationException UnsupportedOperationException) {
+      return false;
     }
   }
 
