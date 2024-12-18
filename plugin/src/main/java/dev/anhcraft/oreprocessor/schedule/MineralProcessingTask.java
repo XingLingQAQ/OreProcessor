@@ -1,4 +1,4 @@
-package dev.anhcraft.oreprocessor.handler;
+package dev.anhcraft.oreprocessor.schedule;
 
 import dev.anhcraft.oreprocessor.OreProcessor;
 import dev.anhcraft.oreprocessor.api.Ore;

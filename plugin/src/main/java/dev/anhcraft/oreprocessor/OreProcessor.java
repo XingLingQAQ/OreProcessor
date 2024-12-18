@@ -16,8 +16,10 @@ import dev.anhcraft.oreprocessor.config.MainConfig;
 import dev.anhcraft.oreprocessor.config.MessageConfig;
 import dev.anhcraft.oreprocessor.config.UpgradeConfig;
 import dev.anhcraft.oreprocessor.gui.*;
-import dev.anhcraft.oreprocessor.handler.PickupTracker;
-import dev.anhcraft.oreprocessor.handler.ProcessingPlant;
+import dev.anhcraft.oreprocessor.listener.BlockEventListener;
+import dev.anhcraft.oreprocessor.schedule.MineralProcessingTask;
+import dev.anhcraft.oreprocessor.listener.PickupTrackingEventListener;
+import dev.anhcraft.oreprocessor.listener.PlayerDataLoadEventListener;
 import dev.anhcraft.oreprocessor.integration.IntegrationManager;
 import dev.anhcraft.oreprocessor.storage.player.PlayerDataManager;
 import dev.anhcraft.oreprocessor.storage.server.ServerDataManager;
@@ -43,9 +45,8 @@ public final class OreProcessor extends JavaPlugin {
     public IntegrationManager integrationManager;
     public PlayerDataManager playerDataManager;
     public ServerDataManager serverDataManager;
-    private ProcessingPlant processingPlant;
     public PluginLogger pluginLogger;
-    public PickupTracker pickupTracker;
+    public PickupTrackingEventListener pickupTracker;
     public Economy economy;
     public MessageConfig messageConfig;
     public MainConfig mainConfig;
@@ -99,12 +100,13 @@ public final class OreProcessor extends JavaPlugin {
         API = new OreProcessorApiImpl(this);
         serverDataManager = new ServerDataManager(this);
         playerDataManager = new PlayerDataManager(this);
-        processingPlant = new ProcessingPlant(this);
         integrationManager = new IntegrationManager(this);
         pluginLogger = new PluginLogger(new File(getDataFolder(), "logs"));
 
         getServer().getPluginManager().registerEvents(new GuiEventListener(), this);
-        getServer().getPluginManager().registerEvents(pickupTracker = new PickupTracker(this), this);
+        getServer().getPluginManager().registerEvents(pickupTracker = new PickupTrackingEventListener(this), this);
+        getServer().getPluginManager().registerEvents(new BlockEventListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerDataLoadEventListener(this), this);
 
         reload();
         serverDataManager.loadData();
@@ -160,11 +162,11 @@ public final class OreProcessor extends JavaPlugin {
         GuiRegistry.CRAFTING = ConfigHelper.load(CraftingGui.class, requestConfig("gui/crafting.yml"));
         GuiRegistry.INSPECT = ConfigHelper.load(InspectGui.class, requestConfig("gui/inspect.yml"));
 
-        processingPlant.reload();
         serverDataManager.reload();
         playerDataManager.reload();
         API.reload();
 
+        new MineralProcessingTask().runTaskTimerAsynchronously(this, 0, (long) (20L * API.getProcessingInterval()));
         new GuiRefreshTask().runTaskTimer(this, 0L, 10L);
         getServer().getScheduler().runTaskTimerAsynchronously(this, pluginLogger::flush, 60L, 100L);
 

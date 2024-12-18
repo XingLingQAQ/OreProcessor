@@ -1,4 +1,4 @@
-package dev.anhcraft.oreprocessor.handler;
+package dev.anhcraft.oreprocessor.listener;
 
 import dev.anhcraft.config.bukkit.utils.ColorUtil;
 import dev.anhcraft.oreprocessor.OreProcessor;
@@ -20,11 +20,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class PickupTracker implements Listener {
+public class PickupTrackingEventListener implements Listener {
     private final OreProcessor plugin;
     private final Map<UUID, PlayerPickupQueue> cache = new ConcurrentHashMap<>();
 
-    public PickupTracker(OreProcessor plugin) {
+    public PickupTrackingEventListener(OreProcessor plugin) {
         this.plugin = plugin;
     }
 
@@ -92,7 +92,7 @@ public class PickupTracker implements Listener {
         }
 
         @Override
-        public int compareTo(@NotNull PickupTracker.PickupAggregator o) {
+        public int compareTo(@NotNull PickupTrackingEventListener.PickupAggregator o) {
             return Integer.compare(o.amount, this.amount); // descending
         }
     }

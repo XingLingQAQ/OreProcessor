@@ -1,11 +1,9 @@
-package dev.anhcraft.oreprocessor.handler;
+package dev.anhcraft.oreprocessor.listener;
 
 import dev.anhcraft.oreprocessor.OreProcessor;
 import dev.anhcraft.oreprocessor.api.Ore;
-import dev.anhcraft.oreprocessor.api.OreTransform;
 import dev.anhcraft.oreprocessor.api.data.OreData;
 import dev.anhcraft.oreprocessor.api.data.PlayerData;
-import dev.anhcraft.oreprocessor.api.event.AsyncPlayerDataLoadEvent;
 import dev.anhcraft.oreprocessor.api.event.OreMineEvent;
 import dev.anhcraft.oreprocessor.api.event.OrePickupEvent;
 import dev.anhcraft.oreprocessor.api.util.UMaterial;
@@ -24,86 +22,12 @@ import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Iterator;
-import java.util.Map;
 
-public class ProcessingPlant implements Listener {
+public class BlockEventListener implements Listener {
     private final OreProcessor plugin;
 
-    public ProcessingPlant(OreProcessor plugin) {
+    public BlockEventListener(OreProcessor plugin) {
         this.plugin = plugin;
-
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
-    }
-
-    @EventHandler
-    public void onPlayerDataLoad(AsyncPlayerDataLoadEvent event) {
-        for (String oreId : event.getData().listOreIds()) {
-            OreData oreData = event.getData().requireOreData(oreId);
-
-            int throughput = oreData.getThroughput();
-            int defaultThroughput = OreProcessor.getApi().getDefaultThroughput();
-            if (throughput < defaultThroughput) {
-                oreData.setThroughput(defaultThroughput);
-                plugin.debug("Upgrade %s's %s throughput to default value: %d → %d", event.getPlayerId(), oreId, throughput, defaultThroughput);
-            }
-
-            int capacity = oreData.getCapacity();
-            int defaultCapacity = OreProcessor.getApi().getDefaultCapacity();
-            if (capacity < defaultCapacity) {
-                oreData.setCapacity(defaultCapacity);
-                plugin.debug("Upgrade %s's %s capacity to default value: %d → %d", event.getPlayerId(), oreId, capacity, defaultCapacity);
-            }
-        }
-
-        long hibernationStart = event.getData().getHibernationStart();
-        if (hibernationStart > 0) {
-            long hibernationTime = (System.currentTimeMillis() - hibernationStart) / 1000;
-            if (hibernationTime > 0) {
-                int mul = (int) (hibernationTime / OreProcessor.getApi().getProcessingInterval());
-                plugin.debug("Processing hibernated materials for %s, time = %ds, multi = x%d", event.getPlayerId(), hibernationTime, mul);
-
-                if (!plugin.mainConfig.behaviourSettings.disableOfflineProcessing) {
-                    for (String oreId : event.getData().listOreIds()) {
-                        OreTransform oreTransform = OreProcessor.getApi().requireOre(oreId).getBestTransform(event.getPlayerId());
-                        Map<UMaterial, Integer> summary = event.getData().requireOreData(oreId).process(mul, oreTransform::convert);
-                        if (summary.isEmpty()) continue;
-                        int processed = summary.values().stream().reduce(0, Integer::sum);
-
-                        StatisticHelper.increaseProductCount(oreId, processed, event.getData());
-                        StatisticHelper.increaseProductCount(oreId, processed, OreProcessor.getApi().getServerData());
-                        OreProcessor.getInstance().debug(2, String.format(
-                                "Processed x%d %s for %s using transform #%s",
-                                processed, oreId, event.getPlayerId(), oreTransform.getId()
-                        ));
-                        for (Map.Entry<UMaterial, Integer> e : summary.entrySet()) {
-                            plugin.pluginLogger.scope("offline-processing")
-                                    .add("player", event.getPlayerId())
-                                    .add("hibernation", hibernationTime)
-                                    .add("multiplier", mul)
-                                    .add("ore", oreId)
-                                    .add("transform", oreTransform.getId())
-                                    .add("product", e.getKey())
-                                    .add("amount", e.getValue())
-                                    .flush();
-                        }
-                    }
-                }
-
-                // then reset hibernation to prevent any unexpected accidents causing duplication
-                event.getData().setHibernationStart(0);
-            }
-        }
-
-        if (plugin.mainConfig.purgeStats.maxPlayerRecords > 0) {
-            OreProcessor.getInstance().debug(String.format(
-                    "Removed %d oldest statistics records from player %s",
-                    event.getData().purgeHourlyStats(plugin.mainConfig.purgeStats.maxPlayerRecords), event.getPlayerId()
-            ));
-        }
-    }
-
-    public void reload() {
-        new MineralProcessingTask().runTaskTimerAsynchronously(plugin, 0, (long) (20L * OreProcessor.getApi().getProcessingInterval()));
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
