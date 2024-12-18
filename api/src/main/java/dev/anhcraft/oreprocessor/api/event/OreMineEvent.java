@@ -1,6 +1,7 @@
 package dev.anhcraft.oreprocessor.api.event;
 
 import dev.anhcraft.oreprocessor.api.Ore;
+import dev.anhcraft.oreprocessor.api.util.UMaterial;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -17,13 +18,15 @@ public class OreMineEvent extends PlayerEvent {
 
     private final Block block;
     private final Ore ore;
+    private final UMaterial material;
     private final boolean storageFull;
 
-    public OreMineEvent(@NotNull Player player, @NotNull Block block, @NotNull Ore ore, boolean storageFull) {
+    public OreMineEvent(@NotNull Player player, @NotNull Block block, @NotNull Ore ore, @NotNull UMaterial material, boolean storageFull) {
         super(player);
         this.block = block;
         this.ore = ore;
-        this.storageFull = storageFull;
+      this.material = material;
+      this.storageFull = storageFull;
     }
 
     @NotNull
@@ -31,8 +34,14 @@ public class OreMineEvent extends PlayerEvent {
         return block;
     }
 
+    @NotNull
     public Ore getOre() {
         return ore;
+    }
+
+    @NotNull
+    public UMaterial getMaterial() {
+        return material;
     }
 
     /**

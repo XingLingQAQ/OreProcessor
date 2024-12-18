@@ -85,6 +85,10 @@ public class IntegrationManager {
         return integrationMap.get(plugin);
     }
 
+    public boolean hasIntegration(String plugin) {
+        return integrationMap.containsKey(plugin);
+    }
+
     public Stream<Integration> streamIntegration() {
         return integrationMap.values().stream();
     }

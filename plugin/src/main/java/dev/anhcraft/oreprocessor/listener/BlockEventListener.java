@@ -1,27 +1,12 @@
 package dev.anhcraft.oreprocessor.listener;
 
 import dev.anhcraft.oreprocessor.OreProcessor;
-import dev.anhcraft.oreprocessor.api.Ore;
-import dev.anhcraft.oreprocessor.api.data.OreData;
-import dev.anhcraft.oreprocessor.api.data.PlayerData;
-import dev.anhcraft.oreprocessor.api.event.OreMineEvent;
-import dev.anhcraft.oreprocessor.api.event.OrePickupEvent;
-import dev.anhcraft.oreprocessor.api.util.UMaterial;
-import dev.anhcraft.oreprocessor.storage.stats.StatisticHelper;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.block.BlockState;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
+import dev.anhcraft.oreprocessor.handler.ProcessingPlant;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.Iterator;
 
 public class BlockEventListener implements Listener {
     private final OreProcessor plugin;
@@ -30,92 +15,39 @@ public class BlockEventListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    // NOTE: We expect that this event is fired for all integrations (vanilla, custom block plugin)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     private void onBreak(BlockBreakEvent event) {
-        Player player = event.getPlayer();
-        if (player.getGameMode() != GameMode.SURVIVAL && player.getGameMode() != GameMode.ADVENTURE)
-            return;
-
-        if (plugin.mainConfig.whitelistWorlds != null &&
-                !plugin.mainConfig.whitelistWorlds.isEmpty() &&
-                !plugin.mainConfig.whitelistWorlds.contains(player.getWorld().getName()))
-            return;
-
-        if (!plugin.mainConfig.behaviourSettings.processSilkTouchItems &&
-                player.getInventory().getItemInMainHand().containsEnchantment(Enchantment.SILK_TOUCH)) return;
-
-        Ore ore = OreProcessor.getApi().getBlockOre(UMaterial.of(event.getBlock().getType()));
-        if (ore == null) return;
-
-        PlayerData playerData = OreProcessor.getApi().getPlayerData(player);
-        OreData oreData = playerData.getOreData(ore.getId());
-        boolean isFull = oreData != null && oreData.isFull();
-        Bukkit.getPluginManager().callEvent(new OreMineEvent(player, event.getBlock(), ore, isFull));
-
-        if (!isFull || plugin.mainConfig.behaviourSettings.enableMiningStatOnFullStorage) {
-            StatisticHelper.increaseMiningCount(ore.getId(), playerData);
-            StatisticHelper.increaseMiningCount(ore.getId(), OreProcessor.getApi().getServerData());
+        if (plugin.processingPlant.fireOnMine(event.getPlayer(), event.getBlock()) == ProcessingPlant.Result.DENY) {
+            event.setCancelled(plugin.processingPlant.fireOnMine(event.getPlayer(), event.getBlock()) == ProcessingPlant.Result.DENY);
         }
+    }
 
-        if (isFull) {
-            if (plugin.mainConfig.behaviourSettings.dropOnFullStorage)
-                return;
-
-            OreProcessor.getInstance().msg(player, OreProcessor.getInstance().messageConfig.storageFull);
-            event.setCancelled(true);
+    // There could be multiple event listeners with priority HIGHEST changing the setCancelled
+    // We can only ensure the event is CANCELLED on priority MONITOR
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    private void onBreakMonitor(BlockBreakEvent event) {
+        if (canVanillaBlocksContainExtraDrops()) {
+            plugin.processingPlant.scheduleLootDropCollector(event.getPlayer(), event.getBlock());
         }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     private void onDrop(BlockDropItemEvent event) {
-        Player player = event.getPlayer();
-        if (player.getGameMode() != GameMode.SURVIVAL && player.getGameMode() != GameMode.ADVENTURE)
+        // If drop collector is already required, the following job would be delegated to the collector later on
+        if (canVanillaBlocksContainExtraDrops())
             return;
 
-        if (plugin.mainConfig.whitelistWorlds != null &&
-                !plugin.mainConfig.whitelistWorlds.isEmpty() &&
-                !plugin.mainConfig.whitelistWorlds.contains(player.getWorld().getName()))
-            return;
+        // here we will collect the drop; any drop that is collected would not be thrown into the world
+        // it is compatible with 3rd-party plugins that call ProcessingPlant#scheduleLootDropCollector
+        plugin.processingPlant.collectLoot(event.getPlayer(), event.getBlockState(), event.getItems());
+    }
 
-        if (!plugin.mainConfig.behaviourSettings.processSilkTouchItems &&
-                player.getInventory().getItemInMainHand().containsEnchantment(Enchantment.SILK_TOUCH)) return;
-
-        BlockState brokenBlock = event.getBlockState();
-        Ore ore = OreProcessor.getApi().getBlockOre(UMaterial.of(brokenBlock.getType()));
-        if (ore == null) return;
-
-        PlayerData playerData = OreProcessor.getApi().getPlayerData(player);
-        OreData oreData = playerData.requireOreData(ore.getId());
-        if (oreData.isFull() && plugin.mainConfig.behaviourSettings.dropOnFullStorage)
-            return;
-
-        boolean has = false;
-
-        for (Iterator<Item> iterator = event.getItems().iterator(); iterator.hasNext(); ) {
-            ItemStack eventItem = iterator.next().getItemStack();
-            UMaterial feedstock = OreProcessor.getApi().identifyMaterial(eventItem);
-            if (feedstock == null) continue;
-            int amount = eventItem.getAmount();
-
-            OrePickupEvent pickupEvent = new OrePickupEvent(player, event.getBlock(), brokenBlock, ore, feedstock, amount);
-            pickupEvent.setCancelled(!ore.isAcceptableFeedstock(feedstock));
-            Bukkit.getPluginManager().callEvent(pickupEvent);
-
-            if (!pickupEvent.isCancelled()) {
-                feedstock = pickupEvent.getFeedstock();
-                amount = pickupEvent.getAmount();
-                StatisticHelper.increaseFeedstockCount(ore.getId(), amount, playerData);
-                StatisticHelper.increaseFeedstockCount(ore.getId(), amount, OreProcessor.getApi().getServerData());
-                oreData.addFeedstock(feedstock, amount);
-                has = true;
-                iterator.remove();
-            }
-        }
-
-        if (has && !playerData.isTutorialHidden()) {
-            for (String msg : OreProcessor.getInstance().messageConfig.firstTimeTutorial) {
-                OreProcessor.getInstance().rawMsg(player, msg);
-            }
-        }
+    // The drop collector is required when there is additional drops to vanilla blocks
+    // (and that plugin does not provide API to monitor that)
+    // If we rely on BlockDropItemEvent on that case, additional drops would be missed
+    private boolean canVanillaBlocksContainExtraDrops() {
+        return plugin.integrationManager.hasIntegration("ItemsAdder") ||
+          plugin.integrationManager.hasIntegration("Oraxen");
     }
 }

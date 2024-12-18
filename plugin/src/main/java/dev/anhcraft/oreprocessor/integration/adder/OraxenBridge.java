@@ -33,6 +33,8 @@ public class OraxenBridge implements Integration, ItemCustomizer {
         this.fortuneEnchant = EnchantmentWrapper.getByName("fortune");
     }
 
+    // TODO we do not know if Oraxen add custom drops to vanilla blocks lol (look at ItemsAdderBridge for code)
+
     @Override
     public MaterialClass getMaterialClass() {
         return MaterialClass.ORAXEN;

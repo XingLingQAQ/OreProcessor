@@ -16,11 +16,12 @@ import dev.anhcraft.oreprocessor.config.MainConfig;
 import dev.anhcraft.oreprocessor.config.MessageConfig;
 import dev.anhcraft.oreprocessor.config.UpgradeConfig;
 import dev.anhcraft.oreprocessor.gui.*;
+import dev.anhcraft.oreprocessor.handler.ProcessingPlant;
+import dev.anhcraft.oreprocessor.integration.IntegrationManager;
 import dev.anhcraft.oreprocessor.listener.BlockEventListener;
-import dev.anhcraft.oreprocessor.schedule.MineralProcessingTask;
 import dev.anhcraft.oreprocessor.listener.PickupTrackingEventListener;
 import dev.anhcraft.oreprocessor.listener.PlayerDataLoadEventListener;
-import dev.anhcraft.oreprocessor.integration.IntegrationManager;
+import dev.anhcraft.oreprocessor.schedule.MineralProcessingTask;
 import dev.anhcraft.oreprocessor.storage.player.PlayerDataManager;
 import dev.anhcraft.oreprocessor.storage.server.ServerDataManager;
 import dev.anhcraft.oreprocessor.util.ConfigHelper;
@@ -42,6 +43,7 @@ public final class OreProcessor extends JavaPlugin {
     public static final int LATEST_SERVER_DATA_VERSION = 1;
     private static OreProcessor INSTANCE;
     private static OreProcessorApiImpl API;
+    public ProcessingPlant processingPlant;
     public IntegrationManager integrationManager;
     public PlayerDataManager playerDataManager;
     public ServerDataManager serverDataManager;
@@ -98,6 +100,7 @@ public final class OreProcessor extends JavaPlugin {
 
         INSTANCE = this;
         API = new OreProcessorApiImpl(this);
+        processingPlant = new ProcessingPlant(this);
         serverDataManager = new ServerDataManager(this);
         playerDataManager = new PlayerDataManager(this);
         integrationManager = new IntegrationManager(this);

@@ -7,7 +7,11 @@ import dev.anhcraft.oreprocessor.api.util.UMaterial;
 import dev.anhcraft.oreprocessor.integration.Integration;
 import dev.lone.itemsadder.api.CustomBlock;
 import dev.lone.itemsadder.api.CustomStack;
+import dev.lone.itemsadder.api.Events.CustomBlockBreakEvent;
 import org.bukkit.block.Block;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,11 +20,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ItemsAdderBridge implements Integration, ItemCustomizer {
+public class ItemsAdderBridge implements Integration, Listener, ItemCustomizer {
     private final OreProcessor plugin;
 
     public ItemsAdderBridge(OreProcessor plugin) {
         this.plugin = plugin;
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    private void handleCustomBlockBreakEvent(CustomBlockBreakEvent event) {
+        // It is risky/complex to modify the loot here
+        // ItemsAdder not only provide custom block but also custom loots to existing vanilla blocks
+        // The safest approach is using the loot drop collector
+        plugin.processingPlant.scheduleLootDropCollector(event.getPlayer(), event.getBlock());
     }
 
     @Override
