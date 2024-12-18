@@ -53,7 +53,7 @@ public final class ProcessingPlant {
    */
   public Result fireOnMine(Player player, Block block) {
     if (block.isEmpty())
-      plugin.getLogger().warning("fireOnMine is called later than the breaking event (* Report this to the dev!)");
+      return Result.PASS;
 
     // TODO implement anti-dupe
 
