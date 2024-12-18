@@ -9,6 +9,7 @@ import dev.anhcraft.oreprocessor.api.util.UMaterial;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -167,6 +168,7 @@ public interface OreProcessorApi {
      * @param block The block
      * @return The material
      */
+    @Contract("null -> null")
     @Nullable
     UMaterial identifyMaterial(@Nullable Block block);
 
@@ -175,6 +177,7 @@ public interface OreProcessorApi {
      * @param itemStack The item stack
      * @return The material
      */
+    @Contract("null -> null")
     @Nullable
     UMaterial identifyMaterial(@Nullable ItemStack itemStack);
 
@@ -183,6 +186,7 @@ public interface OreProcessorApi {
      * @param itemStack The item stack
      * @return The item
      */
+    @Contract("null -> null")
     @Nullable
     UItemStack identifyItem(@Nullable ItemStack itemStack);
 
@@ -194,6 +198,7 @@ public interface OreProcessorApi {
      * @param material The material
      * @return The item
      */
+    @Contract("null, _ -> null")
     @Nullable
     ItemStack buildItem(@Nullable UMaterial material, int amount);
 
@@ -204,6 +209,7 @@ public interface OreProcessorApi {
      * @return The item
      * @see #buildItem(UMaterial, int)
      */
+    @Contract("null -> null")
     @Nullable
     default ItemStack buildItem(@Nullable UMaterial material) {
         return buildItem(material, 1);
@@ -216,6 +222,7 @@ public interface OreProcessorApi {
      * @return The item
      * @see #buildItem(UMaterial, int)
      */
+    @Contract("null -> null")
     @Nullable
     default ItemStack buildItem(@Nullable UItemStack itemStack) {
         if (itemStack == null) return null;
@@ -226,7 +233,7 @@ public interface OreProcessorApi {
      * Gets the loot of the given block.
      * @param block The block
      * @param tool The tool used to mine the block
-     * @return a list of items stack
+     * @return a list of items stack; if {@code null}, the block is not an ore
      */
     @Nullable
     List<ItemStack> getLoot(@NotNull Block block, @NotNull ItemStack tool);
