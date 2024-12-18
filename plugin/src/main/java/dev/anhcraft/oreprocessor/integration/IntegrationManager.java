@@ -48,7 +48,7 @@ public class IntegrationManager {
         Preconditions.checkArgument(getItemCustomizers().iterator().next().getClass() == VanillaBridge.class,
           "First item customizer in forward list is expected to be Vanilla");
 
-        Preconditions.checkArgument(itemCustomizersListReversed.iterator().next().getClass() != VanillaBridge.class,
+        Preconditions.checkArgument(itemCustomizersListReversed.size() < 2 || itemCustomizersListReversed.iterator().next().getClass() != VanillaBridge.class,
           "First item customizer in reversed list is expected to be non-Vanilla");
     }
 
