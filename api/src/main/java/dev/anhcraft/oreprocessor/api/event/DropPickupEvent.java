@@ -2,7 +2,6 @@ package dev.anhcraft.oreprocessor.api.event;
 
 import dev.anhcraft.oreprocessor.api.Ore;
 import dev.anhcraft.oreprocessor.api.util.UItemStack;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -27,26 +26,23 @@ public class DropPickupEvent extends PlayerEvent implements Cancellable {
 
   private final Ore ore;
   private UItemStack item;
-  private final Block block;
   private final BlockState brokenState;
   private final TriggerSource triggerSource;
   private boolean cancelled;
 
-  public static DropPickupEvent fromBreakingBlock(@NotNull Player player, @NotNull Ore ore, @NotNull UItemStack item,
-                                                  @NotNull Block block, @NotNull BlockState blockState) {
-    return new DropPickupEvent(player, ore, item, block, blockState, TriggerSource.BLOCK_BREAKING);
+  public static DropPickupEvent fromBreakingBlock(@NotNull Player player, @NotNull Ore ore, @NotNull UItemStack item, @NotNull BlockState blockState) {
+    return new DropPickupEvent(player, ore, item, blockState, TriggerSource.BLOCK_BREAKING);
   }
 
   public static DropPickupEvent fromCollectingDrops(@NotNull Player player, @NotNull Ore ore, @NotNull UItemStack item) {
-    return new DropPickupEvent(player, ore, item, null, null, TriggerSource.DROP_COLLECTOR);
+    return new DropPickupEvent(player, ore, item, null, TriggerSource.DROP_COLLECTOR);
   }
 
   public DropPickupEvent(@NotNull Player player, @NotNull Ore ore, @NotNull UItemStack item,
-                         @Nullable Block block, @Nullable BlockState blockState, @NotNull TriggerSource triggerSource) {
+                         @Nullable BlockState blockState, @NotNull TriggerSource triggerSource) {
     super(player);
     this.ore = ore;
     this.item = item;
-    this.block = block;
     this.brokenState = blockState;
     this.triggerSource = triggerSource;
   }
@@ -63,17 +59,6 @@ public class DropPickupEvent extends PlayerEvent implements Cancellable {
 
   public void setItem(@NotNull UItemStack item) {
     this.item = item;
-  }
-
-  /**
-   * Returns the block broken.<br>
-   * This could be {@code null} because a drop could come from other way: multi-block breaking, lucky bonus, custom
-   * drops, etc.
-   * @return the block that was mined
-   */
-  @Nullable
-  public Block getBlock() {
-    return block;
   }
 
   /**

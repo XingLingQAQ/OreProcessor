@@ -7,7 +7,6 @@ import dev.anhcraft.oreprocessor.api.data.OreData;
 import dev.anhcraft.oreprocessor.api.data.PlayerData;
 import dev.anhcraft.oreprocessor.api.event.DropPickupEvent;
 import dev.anhcraft.oreprocessor.api.event.OreMineEvent;
-import dev.anhcraft.oreprocessor.api.event.OrePickupEvent;
 import dev.anhcraft.oreprocessor.api.util.UItemStack;
 import dev.anhcraft.oreprocessor.api.util.UMaterial;
 import dev.anhcraft.oreprocessor.storage.stats.StatisticHelper;
@@ -204,7 +203,8 @@ public final class ProcessingPlant {
       if (feedstock == null) continue;
       int amount = eventItem.getAmount();
 
-      OrePickupEvent pickupEvent = new OrePickupEvent(player, state.getBlock(), state, ore, feedstock, amount);
+      UItemStack uItemStack = new UItemStack(feedstock, amount);
+      DropPickupEvent pickupEvent = DropPickupEvent.fromBreakingBlock(player, ore, uItemStack, state);
       pickupEvent.setCancelled(
         (oreData.isFull() && plugin.mainConfig.behaviourSettings.dropOnFullStorage) ||
           !ore.isAcceptableFeedstock(feedstock)
@@ -212,8 +212,8 @@ public final class ProcessingPlant {
       Bukkit.getPluginManager().callEvent(pickupEvent);
 
       if (!pickupEvent.isCancelled()) {
-        feedstock = pickupEvent.getFeedstock();
-        amount = pickupEvent.getAmount();
+        feedstock = pickupEvent.getItem().material();
+        amount = pickupEvent.getItem().amount();
         StatisticHelper.increaseFeedstockCount(ore.getId(), amount, playerData);
         StatisticHelper.increaseFeedstockCount(ore.getId(), amount, OreProcessor.getApi().getServerData());
         oreData.addFeedstock(feedstock, amount);
