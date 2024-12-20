@@ -121,6 +121,8 @@ public final class OreProcessor extends JavaPlugin {
         pcm.registerCommand(new UpgradeCommand(this));
         pcm.registerCommand(new StoreCommand(this));
         pcm.registerCommand(new StatsCommand(this));
+        pcm.registerCommand(new ItemCommand(this));
+
         CommandCompletions<BukkitCommandCompletionContext> cmpl = pcm.getCommandCompletions();
         cmpl.registerAsyncCompletion("ores", context -> API.getOres());
         cmpl.registerAsyncCompletion("materials", context -> integrationManager.getAllMaterials());
