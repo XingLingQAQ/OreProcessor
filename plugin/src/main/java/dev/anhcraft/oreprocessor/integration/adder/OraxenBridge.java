@@ -41,7 +41,7 @@ public class OraxenBridge implements Integration, ItemCustomizer {
     }
 
     @Override
-    public Set<UMaterial> getCustomMaterials() {
+    public Set<UMaterial> getMaterials() {
         return OraxenItems.nameStream().map(UMaterial::fromOraxen).collect(Collectors.toSet());
     }
 

@@ -115,7 +115,7 @@ public class IntegrationManager {
     public Set<String> getAllMaterials() {
         Set<String> result = new LinkedHashSet<>();
         for (ItemCustomizer integration : itemCustomizers.values()) {
-            result.addAll(integration.getCustomMaterials().stream().map(UMaterial::toString).toList());
+            result.addAll(integration.getMaterials().stream().map(UMaterial::toString).toList());
         }
         return result;
     }

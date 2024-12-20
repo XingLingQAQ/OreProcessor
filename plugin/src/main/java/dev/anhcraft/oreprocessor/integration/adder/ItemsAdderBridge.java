@@ -42,7 +42,7 @@ public class ItemsAdderBridge implements Integration, Listener, ItemCustomizer {
     }
 
     @Override
-    public Set<UMaterial> getCustomMaterials() {
+    public Set<UMaterial> getMaterials() {
         return CustomStack.getNamespacedIdsInRegistry().stream().map(UMaterial::fromItemsAdder).collect(Collectors.toSet());
     }
 

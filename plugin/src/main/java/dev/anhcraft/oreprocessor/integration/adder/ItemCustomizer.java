@@ -14,7 +14,7 @@ import java.util.Set;
 public interface ItemCustomizer {
     MaterialClass getMaterialClass();
 
-    Set<UMaterial> getCustomMaterials();
+    Set<UMaterial> getMaterials();
 
     @Nullable
     ItemStack buildItem(@NotNull UMaterial material);
